@@ -21,39 +21,48 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
 import ast
-from src.statements import assign, create_if, create_for
+from src.statements import assign, create_if, create_for, create_while
 from src.expressions import call
 
-def main():
+def process_statement(obj, instructions_list: list[str], pc: int):
+    if isinstance(obj, ast.Assign):
+        for inst in assign(obj):
+            instructions_list.append(inst.upper())
+            pc += 1
+    elif isinstance(obj, ast.Expr) and isinstance(obj.value, ast.Call):
+        instructions_list.append(call(obj.value).upper())
+        pc += 1
+    elif isinstance(obj, ast.If):
+        for inst in create_if(obj):
+            instructions_list.append(inst.upper())
+            pc += 1
+    elif isinstance(obj, ast.For):
+        for inst in create_for(obj):
+            instructions_list.append(inst.upper())
+            pc += 1
+    elif isinstance(obj, ast.While):
+        for inst in create_while(obj):
+            instructions_list.append(inst.upper())
+    return pc
+
+def main() -> list:
+    instructions_list: list = []
+    pc: int = 1
+
     with open('programm.py', 'r') as file:
         tree = ast.parse(file.read())
 
     for obj in tree.body:
+        pc = process_statement(obj, instructions_list, pc)
 
-        if isinstance(obj, ast.Assign):
-            for inst in assign(obj):
-                instructions_list.append(inst.upper())
-
-        if isinstance(obj, ast.Expr):
-            if isinstance(obj.value, ast.Call):
-                for inst in call(obj.value):
-                    instructions_list.append(inst.upper())
-
-        if isinstance(obj, ast.If):
-            for inst in create_if(obj):
-                instructions_list.append(inst.upper())
-
-        if isinstance(obj, ast.For):
-            for inst in create_for(obj):
-                instructions_list.append(inst.upper())
+    return instructions_list
 
 if __name__ == '__main__':
-    instructions_list = []
-    main()
-    for index, instruction in enumerate(instructions_list, start=1):
-        if "GOTO " in instruction:
-            goto_i = instruction.index('GOTO ') + 5
-            instruction = instruction[:goto_i] + f"{int(instruction[goto_i:]) + index:02d}"
-            print(f'{index:02d} {instruction}')
-        else:
-            print(f'{index:02d} {instruction}')
+    instructions = main()
+    with open('output.txt', 'w') as f:
+        for index, instruction in enumerate(instructions, start=1):
+            if "GOTO " in instruction:
+                goto_i = instruction.index('GOTO ') + 5
+                instruction = instruction[:goto_i] + f"{int(instruction[goto_i:]) + index:02d}"
+
+            f.write(f'{index:02d} {instruction}\n')

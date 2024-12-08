@@ -20,28 +20,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 
-from .constants import SUPPORTED_BINARY_OPERAIONS
-from .constants import BASE_OPERATIONS
-from .constants import SUPPORTED_FUNCTIONS
-from .constants import SUPPORTED_COMPARE_OPERATIONS
+from .constants import SUPPORTED_BINARY_OPERAIONS, BASE_OPERATIONS, SUPPORTED_FUNCTIONS, SUPPORTED_COMPARE_OPERATIONS
 
-from .aliases import color
-from .aliases import fill
-from .aliases import cls
-from .aliases import sin
-from .aliases import cos
-from .aliases import tan
-from .aliases import rnd
-from .aliases import background
-from .aliases import plot
-from .aliases import line
-from .aliases import circle
+from .aliases import color, fill, cls, sin, cos, tan, rnd, background, plot, line, circle, beep, int_input
 
-from .expressions import bin_op
-from .expressions import call
+from .expressions import bin_op, call
 
-from .statements import assign
-from .statements import create_if
+from .statements import assign, create_if, create_while
 
 __all__ = [
     'SUPPORTED_BINARY_OPERAIONS',
@@ -62,5 +47,7 @@ __all__ = [
     'circle',
     'bin_op',
     'call',
-    'assign'
+    'assign',
+    'beep',
+    'int_input'
 ]

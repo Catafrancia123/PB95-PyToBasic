@@ -20,7 +20,8 @@ class IndependentTests(unittest.TestCase):
             "a = 10 * (25 / 100)",
             "a = 'string'",
             "a, b = 10, 'string'",
-            "a, b = 'string', 'string'"
+            "a, b = 'string', 'string'",
+            "a = 5 == 5"
         ]]
 
         results = []
@@ -54,8 +55,10 @@ class IndependentTests(unittest.TestCase):
         self.assertEqual('LET a="string"', results[15])
         self.assertEqual('LET b="string"', results[16])
 
+        self.assertEqual('LET a=5==5', results[17])
+
     def test_call(self):
-        """If print works - all other calls are working."""
+        """If print works - all other calls should be working."""
 
         tests = [ast.parse(command) for command in [
             "print(100)",
@@ -69,13 +72,12 @@ class IndependentTests(unittest.TestCase):
             for obj in test.body:
                 if isinstance(obj, ast.Expr):
                     if isinstance(obj.value, ast.Call):
-                        for inst in expressions.call(obj.value):
-                            results.append(inst)
+                        results.append(expressions.call(obj.value))
 
         self.assertEqual("PRINT 100", results[0])
         self.assertEqual('PRINT "100"', results[1])
         self.assertEqual("PRINT a", results[2])
-        self.assertEqual("PRINT 50 + 50", results[3])
+        self.assertEqual("PRINT (50 + 50)", results[3])
 
     def test_if_statement(self):
         test = "if a == b:\n" \
@@ -120,7 +122,23 @@ class IndependentTests(unittest.TestCase):
             if isinstance(obj, ast.For):
                 for i, inst in enumerate(statements.create_for(obj)):
                     self.assertEqual(expected[i], inst)
+    
+    def test_while_loop(self):
+        test = "while a == 5:\n" \
+               "    print(a)"
+        expected = [
+            "IF a!=5 THEN GOTO 3",
+            "PRINT a",
+            "IF a==5 THEN GOTO -1",
+            "REM *WHILE EXIT*"
+        ]
 
+        tree = ast.parse(test)
+
+        for obj in tree.body:
+            if isinstance(obj, ast.While):
+                for i, inst in enumerate(statements.create_while(obj)):
+                    self.assertEqual(expected[i], inst)
 
 if __name__ == '__main__':
     unittest.main()

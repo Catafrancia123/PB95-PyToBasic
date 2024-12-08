@@ -22,7 +22,52 @@ SOFTWARE."""
 
 import ast
 from .expressions import bin_op, call
-from .constants import SUPPORTED_COMPARE_OPERATIONS
+from .constants import SUPPORTED_COMPARE_OPERATIONS, OPPOSITE_COMPARE
+
+def process_statement(stmt) -> str | list[str]:
+    if isinstance(stmt, ast.Assign):
+        return assign(stmt)
+    elif isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+        return call(stmt.value)
+    elif isinstance(stmt, ast.If):
+        return create_if(stmt)
+    elif isinstance(stmt, ast.For):
+        return create_for(stmt)
+    else:
+        raise NotImplementedError("Unsupported operation.")
+
+def process_condition(obj: ast.If | ast.While):
+    if isinstance(obj.test, ast.Compare):
+        if type(obj.test.ops[0]) not in SUPPORTED_COMPARE_OPERATIONS:
+            raise NotImplementedError(f"Operation {type(obj.test.ops[0])} is not implemented")
+        if len(obj.test.comparators) > 1:
+            raise NotImplementedError("Can't use more than 1 comparison in PBasic")
+        if any([isinstance(obj.test.left, ast.Str), isinstance(obj.test.comparators[0], ast.Str)]):
+            raise NotImplementedError("Can't compare strings in PBasic")
+
+        left = str(obj.test.left.id) if isinstance(obj.test.left, ast.Name) else str(obj.test.left.value)
+        right = str(obj.test.comparators[0].id) if isinstance(obj.test.comparators[0], ast.Name) else str(obj.test.comparators[0].value)
+
+        return f'{left}{SUPPORTED_COMPARE_OPERATIONS[type(obj.test.ops[0])]}{right}'
+    else:
+        raise NotImplementedError("Can only use compare operations in conditions.")
+
+def process_inverted_condition(obj: ast.While):
+    """Used in loops to skip their first iteration if condition is not met."""
+    if isinstance(obj.test, ast.Compare):
+        if type(obj.test.ops[0]) not in SUPPORTED_COMPARE_OPERATIONS:
+            raise NotImplementedError(f"Operation {type(obj.test.ops[0])} is not implemented")
+        if len(obj.test.comparators) > 1:
+            raise NotImplementedError("Can't use more than 1 comparison in PBasic")
+        if any([isinstance(obj.test.left, ast.Str), isinstance(obj.test.comparators[0], ast.Str)]):
+            raise NotImplementedError("Can't compare strings in PBasic")
+
+        left = str(obj.test.left.id) if isinstance(obj.test.left, ast.Name) else str(obj.test.left.value)
+        right = str(obj.test.comparators[0].id) if isinstance(obj.test.comparators[0], ast.Name) else str(obj.test.comparators[0].value)
+
+        return f'{left}{OPPOSITE_COMPARE[SUPPORTED_COMPARE_OPERATIONS[type(obj.test.ops[0])]]}{right}'
+    else:
+        raise NotImplementedError("Can only use compare operations in conditions.")
 
 def assign(obj: ast.Assign) -> list[str]:
     """Assign statement.
@@ -51,35 +96,28 @@ def assign(obj: ast.Assign) -> list[str]:
 
     result = []
     for target in obj.targets:
-        # target: ast.Name
-
-        if isinstance(target, ast.Name) and isinstance(obj.value, ast.Constant):  # ex. 1-2
-            result.append(f"LET {str(target.id)}={repr(obj.value.value).replace("'", '"')}")
-
-        elif isinstance(target, ast.Name) and isinstance(obj.value, ast.Name):  # ex. 3
-            result.append(f"LET {str(target.id)}={str(obj.value.id)}")
-
-        elif isinstance(target, ast.Tuple) and isinstance(obj.value, ast.Tuple):  # ex. 4
+        if isinstance(target, ast.Name):
+            if isinstance(obj.value, ast.Constant):
+                result.append(f"LET {target.id}={repr(obj.value.value).replace("'", '"')}")
+            elif isinstance(obj.value, ast.Name):
+                result.append(f"LET {target.id}={obj.value.id}")
+            elif isinstance(obj.value, ast.BinOp):
+                result.append(f"LET {target.id}={bin_op(obj.value)}")
+            elif isinstance(obj.value, ast.Call):
+                if obj.value.func.id == 'input':
+                    result.append(f"INPUT {target.id}")
+                else:
+                    result.append(f"{target.id}={call(obj.value)}")
+            elif isinstance(obj.value, ast.Compare):
+                left = str(obj.value.left.id) if isinstance(obj.value.left, ast.Name) else str(obj.value.left.value)
+                right = str(obj.value.comparators[0].id) if isinstance(obj.value.comparators[0], ast.Name) else str(obj.value.comparators[0].value)
+                result.append(f"LET {target.id}={left}{SUPPORTED_COMPARE_OPERATIONS[type(obj.value.ops[0])]}{right}")
+        elif isinstance(target, ast.Tuple) and isinstance(obj.value, ast.Tuple):
             for elt_name, elt_value in zip(target.elts, obj.value.elts):
-
-                if isinstance(elt_value, ast.Constant):  # ex. 4.1
-                    result.append(f"LET {str(elt_name.id)}={repr(elt_value.value).replace("'", '"')}")
-
-                elif isinstance(elt_value, ast.Name):  # ex. 4.2
-                    if isinstance(elt_value.ctx, ast.Load):
-                        result.append(f"LET {str(elt_name.id)}={str(elt_value.id)}")
-                    else:
-                        result.append(f"LET {str(elt_name.id)}={repr(elt_value.id).replace("'", '"')}")
-
-        elif isinstance(obj.value, ast.BinOp):  # ex. 5
-            result.append(f"LET {str(target.id)}={bin_op(obj.value)}")
-
-        elif isinstance(obj.value, ast.Call):
-            if obj.value.func.id == 'input':
-                result.append(f"INPUT {target.id}")
-            else:
-                result.append(f"{target.id}={call(obj.value)}")
-
+                if isinstance(elt_value, ast.Constant):
+                    result.append(f"LET {elt_name.id}={repr(elt_value.value).replace("'", '"')}")
+                elif isinstance(elt_value, ast.Name):
+                    result.append(f"LET {elt_name.id}={elt_value.id}")
     return result
 
 def create_if(obj: ast.If) -> list[str]:
@@ -88,126 +126,81 @@ def create_if(obj: ast.If) -> list[str]:
     else_stmt = []
     if_stmt = []
 
-    if isinstance(obj.test, ast.Compare):
-        if type(obj.test.ops[0]) not in SUPPORTED_COMPARE_OPERATIONS:
-            raise NotImplementedError(f"Operaion {type(obj.test.ops[0])} is not implemented")
-        if len(obj.test.comparators) > 1:
-            raise NotImplementedError("Can't use more than 1 comparison in an if statement in PBasic")
-        if any([isinstance(obj.test.left, ast.Str), isinstance(obj.test.comparators[0], ast.Str)]):
-            raise NotImplementedError(f"Can't compare strings in PBasic")
+    condition.append(process_condition(obj))
 
-        if isinstance(obj.test.left, ast.Name):
-            left = str(obj.test.left.id)
-        elif isinstance(obj.test.left, ast.Constant):
-            left = str(obj.test.left.value)
+    for stmt in obj.orelse:
+        res = process_statement(stmt)
+        if isinstance(res, list):
+            else_stmt.extend(res)
+        else:
+            else_stmt.append(res)
 
-        if isinstance(obj.test.comparators[0], ast.Name):
-            right = str(obj.test.comparators[0].id)
-        elif isinstance(obj.test.comparators[0], ast.Constant):
-            right = str(obj.test.comparators[0].id)
+    for stmt in obj.body:
+        res = process_statement(stmt)
+        if isinstance(res, list):
+            if_stmt.extend(res)
+        else:
+            if_stmt.append(res)
 
-        condition.append(f'{left}{SUPPORTED_COMPARE_OPERATIONS[type(obj.test.ops[0])]}{right}')
-
-    for else_obj in obj.orelse:
-
-        if isinstance(else_obj, ast.Assign):
-            for inst in assign(else_obj):
-                else_stmt.append(inst)
-
-        if isinstance(else_obj, ast.Expr):
-            if isinstance(else_obj.value, ast.Call):
-                for inst in call(else_obj.value):
-                    else_stmt.append(inst)
-
-        if isinstance(else_obj, ast.If):
-            for inst in create_if(else_obj):
-                else_stmt.append(inst)
-
-        if isinstance(else_obj, ast.For):
-            for inst in create_for(else_obj):
-                else_stmt.append(inst)
-
-    for if_obj in obj.body:
-
-        if isinstance(if_obj, ast.Assign):
-            for inst in assign(if_obj):
-                if_stmt.append(inst)
-
-        if isinstance(if_obj, ast.Expr):
-            if isinstance(if_obj.value, ast.Call):
-                for inst in call(if_obj.value):
-                    if_stmt.append(inst)
-
-        if isinstance(if_obj, ast.If):
-            for inst in create_if(if_obj):
-                if_stmt.append(inst)
-
-        if isinstance(if_obj, ast.For):
-            for inst in create_for(if_obj):
-                if_stmt.append(inst)
-
-    if len(else_stmt) == 1 and len(if_stmt) == 1:
+    if len(else_stmt) == 1 and len(if_stmt) == 1 and len(else_stmt[0]) + len(if_stmt[0]) <= 30:
         condition.append(f'THEN {if_stmt[0]}')
         result.append(" ".join(condition))
         result.append(f'ELSE {else_stmt[0]}')
     else:
         condition.append(f'THEN GOTO {len(else_stmt) + 2}')
         result.append(" ".join(condition))
-
-        for else_obj in else_stmt:
-            result.append(else_obj)
-
+        result.extend(else_stmt)
         result.append(f"GOTO {len(if_stmt) + 1}")
-
-        for if_obj in if_stmt:
-            result.append(if_obj)
-
+        result.extend(if_stmt)
         result.append("REM *ELSE EXIT*")
 
     return result
 
 def create_for(obj: ast.For) -> list[str]:
-
     result = []
     body = []
 
-    if not isinstance(obj.iter, ast.Call):
-        raise NotImplementedError("Can only use range() created iterators.")
-    elif obj.iter.func.id != 'range':
-        raise NotImplementedError("Can only use range() created iterators.")
-    elif obj.orelse:
-        raise NotImplementedError("Can't use else statement in for loops.")
+    if not isinstance(obj.iter, ast.Call) or obj.iter.func.id != 'range' or obj.orelse:
+        raise NotImplementedError("Can only use range() created iterators without else statement.")
 
-    if len(obj.iter.args) == 2:
-        result.append(f"FOR {obj.target.id}={obj.iter.args[0].value} TO {obj.iter.args[1].value - 1}")  # Decreasing by 1 to match results with python
-    else:
-        result.append(f"FOR {obj.target.id}=0 TO {obj.iter.args[0].value}")
+    start = obj.iter.args[0].value if len(obj.iter.args) > 1 else 0
+    end = obj.iter.args[1].value - 1 if len(obj.iter.args) > 1 else obj.iter.args[0].value - 1
+    result.append(f"FOR {obj.target.id}={start} TO {end}")
 
-    for body_obj in obj.body:
-
-        if isinstance(body_obj, ast.Break):
+    for stmt in obj.body:
+        if isinstance(stmt, ast.Break):
             raise NotImplementedError("Can't use break statement.")
+        body.append(process_statement(stmt))
 
-        if isinstance(body_obj, ast.Assign):
-            for inst in assign(body_obj):
-                body.append(inst)
-
-        if isinstance(body_obj, ast.Expr):
-            if isinstance(body_obj.value, ast.Call):
-                for inst in call(body_obj.value):
-                    body.append(inst)
-
-        if isinstance(body_obj, ast.If):
-            for inst in create_if(body_obj):
-                body.append(inst)
-
-        if isinstance(body_obj, ast.For):
-            for inst in create_for(body_obj):
-                body.append(inst)
-
-    for body_obj in body:
-        result.append(body_obj)
-
+    result.extend(body)
     result.append(f"NEXT {obj.target.id}")
+
+    return result
+
+def create_while(obj: ast.While) -> list[str]:
+    result: list[str] = []
+    condition: list[str] = ['IF']
+    inverted_condition: list[str] = ['IF']
+    body: list[str] = []
+
+    condition.append(process_condition(obj))
+    inverted_condition.append(process_inverted_condition(obj))
+
+    for stmt in obj.body:
+        if isinstance(stmt, ast.Break):
+            raise NotImplementedError("Can't use break statement.")
+        res = process_statement(stmt)
+        if isinstance(res, list):
+            body.extend(res)
+        else:
+            body.append(res)
+    
+    body.append(f"{" ".join(condition)} THEN GOTO {-len(body)}")
+    body.append("REM *WHILE EXIT*")
+    
+    inverted_condition.append(f"THEN GOTO {len(body)}")
+
+    result.append(" ".join(inverted_condition))
+    result.extend(body)
 
     return result
