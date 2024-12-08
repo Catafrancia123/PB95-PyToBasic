@@ -1,41 +1,35 @@
 # PB95-PyToBasic
 
-PyToBasic converts python code to a language used in game Progressbar95 called PBasic.
-Since python code is much more readable, you will create scripts much faster.
+PyToBasic converts Python code to a language used in the game Progressbar95 called PBasic. Python code is more readable, allowing you to create scripts much faster.
 
-> [!NOTE]  
-> This is a fun little project that shouldn't be taken seriously.
-> PBasic is very limited, you can't concatonate strings, create real functions, create classes,
-> use most compare operators, create local variables and much more. Take it as a small tool for experimenting.
+> [!NOTE]
+This is a fun little project that shouldn't be taken seriously. PBasic is very limited: you can't concatenate strings, create real functions, create classes, use most compare operators, create local variables, and much more. Take it as a small tool for experimenting.
 
 ## Contents
 
-- [Usage](#usage)
-- [Documentation](#documentation)
-- [Contribution](#contribution)
-- [License](#license)
+- Usage
+- Documentation
+- Contribution
+- License
 
 ## Usage
 
-> [!NOTE]  
-> You need python 3.12 to run converter properly. AST is changing with eachpyt new version.
-> I can't guarantee that it will work on older or newer versions. E.g. 3.14 removed some deprecated vribles that are being used.
+> [!NOTE]
+You need Python 3.12 to run the converter properly. The AST changes with each new version. I can't guarantee that it will work on older or newer versions. For example, 3.14 removed some deprecated variables that are being used.
 
-You can download the source code from latest release, or clone current branch using git clone command.
+You can download the source code from the latest release or clone the current branch using the git clone command.
 
-Write your code in programm.py and then execute main.py file. The output of your PBasic programm will be written in new output.txt file.
+Write your code in programm.py and then execute the main.py file. The output of your PBasic program will be written in a new output.txt file.
 
-Note that you need to manually input instructions in game. There are save files for written code
-(/data/data/com.spookyhousestudios.progressbar95/app_data on android), but if you change them, game will execute code incorrectly and your device must be rooted in order to access them.
+Note that you need to manually input instructions in the game. There are save files for written code (/data/data/com.spookyhousestudios.progressbar95/app_data on Android), but if you change them, the game will execute the code incorrectly, and your device must be rooted in order to access them.
 
 ## Documentation
 
-This part will go over operations you can do in the converter. You're expected to have basic understanding of python.
+This part will go over the operations you can do in the converter. You're expected to have a basic understanding of Python.
 
 ### Binary Operations
 
-Currently, you can only add, substract, multiply and divide as many numbers as you want.
-Brackets will be placed accordingly.
+Currently, you can only add, subtract, multiply, and divide as many numbers as you want. Brackets will be placed accordingly.
 
 ```python
 # Implemented
@@ -50,20 +44,20 @@ a * (12 + 3) - 12
 10 ** 2
 ```
 
-### Boolean operations
+### Boolean Operations
 
-Are not supported at all. You can only use compare operators ==, !=, >, <
+Boolean operations are not supported at all. You can only use the compare operators ==, !=, >, and <.
 
-### Assingment
+### Assignment
 
-You can assing string and numbers to variables. Converter will translate them to appropriate names. You can do math operations on numbers, but can't concatonate strings.
+You can assign strings and numbers to variables. The converter will translate them to appropriate names. You can do math operations on numbers but can't concatenate strings.
 
 ```python
 # Implemented
 a = "PBasic"
 a = 25 + 25
 a, b = c, d
-a = 5 == 5  # This is an edge case, because you can't assign truth values yourself
+a = 5 == 5  # This is an edge case because you can't assign truth values yourself
 
 # Not implemented
 a = True
@@ -73,7 +67,7 @@ a = a or b
 
 ### Print
 
-You can output your variables, binary operations or results of in-build functions. Multiple print arguments will split into multiple lines.
+You can output your variables, binary operations, or results of in-built functions. Multiple print arguments will split into multiple lines.
 
 ```python
 # Implemented
@@ -89,7 +83,7 @@ print(a or b)
 
 ### Input
 
-You can get input from user by using input(). Note that it will only properly work as a separate statement.
+You can get input from the user by using input(). Note that it will only properly work as a separate statement.
 
 ```python
 # Implemented
@@ -100,7 +94,7 @@ print(input())
 a, b = input()
 ```
 
-If you need to get integer from input, you can use alias for it, since there's no type convertion in PBasic.
+If you need to get an integer from input, you can use an alias for it, since there's no type conversion in PBasic.
 
 ```python
 from src.aliases import int_input
@@ -108,10 +102,9 @@ from src.aliases import int_input
 a = int_input()
 ```
 
-### If statemets
+### If Statements
 
-You can create as many if statements as you want. If they take single actions, code will be optimised.
-Note that only compare operator are supported, since there're no real logical values in PBasic.
+You can create as many if statements as you want. If they take single actions, the code will be optimized. Note that only compare operators are supported, since there are no real logical values in PBasic.
 
 ```python
 if a > b:
@@ -124,10 +117,9 @@ else:
     print(b)
 ```
 
-### For loops
+### For Loops
 
-You can create multiple for loops. You need to use range() as an iterable object. You can't use break or else statements.
-Note that in PBasic the first value in iteration is 1, but it's changed to 0 for compatibility. Make sure to specify the start number when neccessary.
+You can create multiple for loops. You need to use range() as an iterable object. You can't use break or else statements. Note that in PBasic the first value in iteration is 1, but it's changed to 0 for compatibility. Make sure to specify the start number when necessary.
 
 ```python
 # Implemented
@@ -140,9 +132,9 @@ for letter in "any other iterable":
     print(letter)
 ```
 
-### While loops
+### While Loops
 
-While loops are done using if statement logic after convertion.
+While loops are done using if statement logic after conversion.
 
 ```python
 num = 10
@@ -169,9 +161,9 @@ while var == TR:
 
 ### Functions
 
-Since there's no kind of return in PBasic, functions are just abstraction. Code inside them will be repeated after convertion. Functions must not accept any arguments and return None. Remember that there're not any local variables in PBasic.
+Since there's no kind of return in PBasic, functions are just abstractions. Code inside them will be repeated after conversion. Functions must not accept any arguments and return None. Remember that there are no local variables in PBasic.
 
-### Inbuild Functions
+### In-built Functions
 
 You can use everything said above plus functions provided in src.aliases.
 
@@ -188,23 +180,22 @@ print(cos(30 + rnd(25)))
 
 ### Misc
 
-Note that that you can only type 40 characters in one line. This is not being checked in most cases. Instruction numbers don't have a limit.
+Note that you can only type 40 characters in one line. This is not being checked in most cases. Instruction numbers don't have a limit.
 
 Local variables don't exist. Functions can only use global variables.
 
-You can only use 1 comparison at the time in if statement.
+You can only use 1 comparison at a time in if statements.
 
 You can't assign truth values to variables directly. You need to use something like ``TR = 1`` and ``FL = 0``, because they technically exist.
 
-Since you can't use break statement, you must change conditional variable of the infinite loop.
+Since you can't use the break statement, you must change the conditional variable of the infinite loop.
 
-Game tip, sometimes your code will silence stop keys (e.g. pause, break) until completing, so make sure to save your hard written code before
-executing. You may loose it otherwise!
+Game tip: sometimes your code will silence stop keys (e.g., pause, break) until completing, so make sure to save your hard-written code before executing. You may lose it otherwise!
 
 ## Contribution
 
-If you want to improve already existing code or implement your own functionality, then go ahead. If you want to reach me, there's a Discord link in my profile.
+If you want to improve the existing code or implement your own functionality, then go ahead. If you want to reach me, there's a Discord link in my profile.
 
 ## License
 
-This project uses MIT License. See [LICENSE](https://github.com/Lemon4ksan/PB95-PyToBasic/blob/master/LICENSE) for details.
+This project uses the MIT License. See [LICENSE](https://github.com/Lemon4ksan/PB95-PyToBasic/blob/master/LICENSE) for details.
