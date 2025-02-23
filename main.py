@@ -49,7 +49,7 @@ def main() -> list:
     instructions_list: list = []
     pc: int = 1
 
-    with open('programm.py', 'r') as file:
+    with open('write_program_here.py', 'r') as file:
         tree = ast.parse(file.read())
 
     for obj in tree.body:
