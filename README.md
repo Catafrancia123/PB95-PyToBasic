@@ -5,7 +5,10 @@ PyToBasic converts Python code to a language used in the game Progressbar95 call
 Currently there are 4 functions: `print()`, `random()` RND in PB95, `let()` sets a variable, and `clear()` CLS in PB95.
 
 > [!NOTE]
-This is a fun little project that shouldn't be taken seriously. PBasic is very limited: you can't concatenate strings, create real functions, create classes, use most compare operators, create local variables, and much more. Take it as a small tool for experimenting, and wait for further updates if PBasic is updated. This repository is up-to-date with Progressbar95 v.1.06.
+The project **isn't** done yet. the full functionality of [the main branch](https://github.com/Progressbar-Discord-Server/PB95-PyToBasic) is not fully implemented yet. This readme acts as a way to use the program after its finished. Please be patient and wait for more updates, I update this daily.
+
+> [!NOTE]
+This is a fun little project that shouldn't be taken seriously. PBasic is very limited: you can't concatenate strings, create real functions, create classes, use most compare operators, create local variables, and much more. Take it as a small tool for experimenting, and wait for further updates if PBasic is updated
 
 ## Contents
 - [Usage](#usage)
